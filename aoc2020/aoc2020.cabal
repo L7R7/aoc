@@ -34,6 +34,7 @@ library
       Day04_2
       Day05
       Day06
+      Day07
   other-modules:
       Paths_aoc2020
   hs-source-dirs:
