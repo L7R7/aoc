@@ -35,6 +35,7 @@ library
       Day05
       Day06
       Day07
+      Day08
   other-modules:
       Paths_aoc2020
   hs-source-dirs:
@@ -47,6 +48,7 @@ library
     , graphite
     , relude
     , split
+    , vector
   default-language: Haskell2010
   default-extensions:
       NoImplicitPrelude
