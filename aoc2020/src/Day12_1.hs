@@ -1,4 +1,4 @@
-module Day12 where
+module Day12_1 where
 
 import Relude
 import Text.Megaparsec (sepBy1)
@@ -38,13 +38,13 @@ parseInput = M.parseMaybe inputParser
 --   Action L means to turn left the given number of degrees.
 --   Action R means to turn right the given number of degrees.
 --   Action F means to move forward by the given value in the direction the ship is currently facing.
-data Command = N | S | E | W | L | R | F deriving (Eq, Show)
+data Command = N | S | E | W | L | R | F deriving (Eq)
 
-data Instruction = I Command Int deriving (Show)
+data Instruction = I Command Int
 
-data Direction = North | East | South | West deriving (Show)
+data Direction = North | East | South | West
 
-data ShipState = ShipState (Int, Int) Direction deriving (Show)
+data ShipState = ShipState (Int, Int) Direction
 
 update :: ShipState -> Instruction -> ShipState
 update (ShipState location direction) (I L degrees) = ShipState location (rotateL direction degrees)
