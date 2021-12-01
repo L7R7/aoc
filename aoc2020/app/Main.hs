@@ -1,6 +1,6 @@
 module Main where
 
-import Day12_1
+import Day14
 import Relude (IO)
 
 main :: IO ()

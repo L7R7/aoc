@@ -1,4 +1,4 @@
-module Day13 where
+module Day13_1 where
 
 import Relude
 import Text.Megaparsec (sepBy1)
@@ -30,4 +30,4 @@ evaluate1 (Input startTime busLines) = find hasMatchingBusLine (timeWithBusLines
     multiplyResult (time, ls) = (* (time - startTime)) <$> viaNonEmpty head ls
 
 run :: IO ()
-run = readFile "inputs/day13-2.txt" >>= \s -> print (parseInput s >>= evaluate1)
+run = readFile "inputs/day13-1.txt" >>= \s -> print (parseInput s >>= evaluate1)

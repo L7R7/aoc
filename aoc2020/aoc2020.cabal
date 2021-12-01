@@ -41,7 +41,9 @@ library
       Day11
       Day12_1
       Day12_2
-      Day13
+      Day13_1
+      Day13_2
+      Day14
   other-modules:
       Paths_aoc2020
   hs-source-dirs:
