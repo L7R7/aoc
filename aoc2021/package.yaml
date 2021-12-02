@@ -25,6 +25,7 @@ dependencies:
 library:
   source-dirs: src
   dependencies:
+    - megaparsec
     - relude
     - split
   default-extensions:
