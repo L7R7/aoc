@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -23,32 +22,21 @@ parseInputLine =
     <|> Down <$> (string "down " *> decimal)
     <|> Up <$> (string "up " *> decimal)
 
-data Position a b = Position {horizontal :: a, depth :: b} deriving (Eq, Show)
-
-instance Bifunctor Position where
-  bimap fab fcd (Position a b) = Position (fab a) (fcd b)
-
 evaluate1 :: [Command] -> Int
 evaluate1 cs = endHorizontal * endDepth
   where
-    (Position endHorizontal endDepth) = flipfoldl' f (Position 0 0) cs
-
-f :: Command -> Position Int Int -> Position Int Int
-f (Forward i) = first (i +)
-f (Down i) = second (i +)
-f (Up i) = second (\d -> d - i)
-
-data Position2 a = Position2 {position :: Position Int Int, aim :: a} deriving (Functor)
+    (endHorizontal, endDepth) = flipfoldl' f (0, 0) cs
+    f (Forward i) = first (i +)
+    f (Down i) = second (i +)
+    f (Up i) = second (\d -> d - i)
 
 evaluate2 :: [Command] -> Int
 evaluate2 cs = endHorizontal * endDepth
   where
-    (Position2 (Position endHorizontal endDepth) _) = flipfoldl' g (Position2 (Position 0 0) 0) cs
-
-g :: Command -> Position2 Int -> Position2 Int
-g (Forward i) (Position2 p a) = Position2 (bimap (i +) (\d -> d + a * i) p) a
-g (Down i) p = (+ i) <$> p
-g (Up i) p = (\a -> a - i) <$> p
+    ((endHorizontal, endDepth), _) = flipfoldl' g ((0, 0), 0) cs
+    g (Forward i) p@(_, a) = first (bimap (i +) (\d -> d + a * i)) p
+    g (Down i) p = (+ i) <$> p
+    g (Up i) p = (\a -> a - i) <$> p
 
 run :: IO ()
 run = do
