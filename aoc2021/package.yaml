@@ -31,6 +31,7 @@ library:
   default-extensions:
     - NoImplicitPrelude
     - OverloadedStrings
+    - PartialTypeSignatures
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints -fwrite-ide-info -hiedir=.hie -O2 -frefinement-level-hole-fits=3
 
 executables:
