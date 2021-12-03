@@ -1,11 +1,11 @@
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 
 module Day03 where
 
-import Relude hiding (Down)
+import Data.List (partition)
+import Relude hiding (Down, head)
 import Relude.Extra (toSnd)
+import Relude.Unsafe ((!!))
 import Text.Megaparsec
 import qualified Text.Megaparsec as T
 import Text.Megaparsec.Char
@@ -51,22 +51,22 @@ parseInputLine = T.some $ I <$ char '1' <|> O <$ char '0'
 
 evaluate1 :: [InputLine] -> Int
 evaluate1 = uncurry (*) . bimap toDecimal toDecimal . toSnd flipped . selectMaximum . fmap fold . transpose . fmap countBits
+  where
+    flipped :: InputLine -> InputLine
+    flipped = fmap $ \case
+      I -> O
+      O -> I
 
-flipped :: InputLine -> InputLine
-flipped = fmap $ \case
-  I -> O
-  O -> I
+    countBits :: InputLine -> [(Sum Int, Sum Int)]
+    countBits = fmap $ \case
+      I -> (Sum 1, Sum 0)
+      O -> (Sum 0, Sum 1)
 
-countBits :: InputLine -> [(Sum Int, Sum Int)]
-countBits = fmap $ \case
-  I -> (Sum 1, Sum 0)
-  O -> (Sum 0, Sum 1)
-
-selectMaximum :: [(Sum Int, Sum Int)] -> InputLine
-selectMaximum = fmap $ \case
-  (Sum i, Sum o)
-    | i > o -> I
-    | otherwise -> O
+    selectMaximum :: [(Sum Int, Sum Int)] -> InputLine
+    selectMaximum = fmap $ \case
+      (Sum i, Sum o)
+        | i > o -> I
+        | otherwise -> O
 
 toDecimal :: InputLine -> Int
 toDecimal = foldl' f 0
@@ -75,7 +75,16 @@ toDecimal = foldl' f 0
     f acc I = acc * 2 + 1
 
 evaluate2 :: [InputLine] -> Int
-evaluate2 is = 0
+evaluate2 inputs = toDecimal (fox 0 (>=) inputs) * toDecimal (fox 0 (<) inputs)
+  where
+    fox :: Int -> (Int -> Int -> Bool) -> [InputLine] -> InputLine
+    fox _ _ [input] = input
+    fox i p is = fox (i + 1) p res
+      where
+        (xs, ys) = prt i is
+        res = if p (length xs) (length ys) then xs else ys
+    prt :: Int -> [InputLine] -> ([InputLine], [InputLine])
+    prt i = partition (\l -> l !! i == I)
 
 run :: IO ()
 run = do
@@ -95,7 +104,7 @@ run = do
 
       putStrLn "=== Part 2"
       let solution3 = evaluate2 exampleParsed
-      putStrLn $ "Solution is correct for example input: " <> show (solution3 == 900)
+      putStrLn $ "Solution is correct for example input: " <> show (solution3 == 230)
       let solution4 = evaluate2 input
       putStrLn $ "Solution for input is: " <> show solution4
-      putStrLn $ "Solution is correct for input: " <> show (solution4 == 2044620088)
+      putStrLn $ "Solution is correct for input: " <> show (solution4 == 3379326)
