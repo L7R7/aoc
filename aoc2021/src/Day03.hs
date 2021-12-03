@@ -11,36 +11,10 @@ import qualified Text.Megaparsec as T
 import Text.Megaparsec.Char
 
 example :: [Text]
-example =
-  [ "00100",
-    "11110",
-    "10110",
-    "10111",
-    "10101",
-    "01111",
-    "00111",
-    "11100",
-    "10000",
-    "11001",
-    "00010",
-    "01010"
-  ]
+example = ["00100", "11110", "10110", "10111", "10101", "01111", "00111", "11100", "10000", "11001", "00010", "01010"]
 
 exampleParsed :: [InputLine]
-exampleParsed =
-  [ [O, O, I, O, O],
-    [I, I, I, I, O],
-    [I, O, I, I, O],
-    [I, O, I, I, I],
-    [I, O, I, O, I],
-    [O, I, I, I, I],
-    [O, O, I, I, I],
-    [I, I, I, O, O],
-    [I, O, O, O, O],
-    [I, I, O, O, I],
-    [O, O, O, I, O],
-    [O, I, O, I, O]
-  ]
+exampleParsed = [[O, O, I, O, O], [I, I, I, I, O], [I, O, I, I, O], [I, O, I, I, I], [I, O, I, O, I], [O, I, I, I, I], [O, O, I, I, I], [I, I, I, O, O], [I, O, O, O, O], [I, I, O, O, I], [O, O, O, I, O], [O, I, O, I, O]]
 
 data Input = I | O deriving (Eq, Show)
 
@@ -83,6 +57,7 @@ evaluate2 inputs = toDecimal (fox 0 (>=) inputs) * toDecimal (fox 0 (<) inputs)
       where
         (xs, ys) = prt i is
         res = if p (length xs) (length ys) then xs else ys
+
     prt :: Int -> [InputLine] -> ([InputLine], [InputLine])
     prt i = partition (\l -> l !! i == I)
 
