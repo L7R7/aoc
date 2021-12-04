@@ -59,10 +59,7 @@ evaluate1 (Input (n :| nums) bs) = calculateScore <$> (extractWinningCombination
     findWinningStep :: Maybe Step
     findWinningStep = find wins (scanl' (<>) (init bs n) (init bs <$> nums))
     extractWinningCombination :: Step -> Maybe (Int, BoardState)
-    extractWinningCombination (Step (Last num) states) = do
-      i <- num
-      winning <- find wins' states
-      pure (i, winning)
+    extractWinningCombination (Step (Last num) states) = (,) <$> num <*> find wins' states
 
 evaluate1' :: Input -> Maybe Int
 evaluate1' = evaluateX listToMaybe
