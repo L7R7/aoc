@@ -1,9 +1,11 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TupleSections #-}
 
 module Day04 where
 
 import qualified Control.Monad.Combinators.NonEmpty as NE
+import Data.List (partition)
 import Relude hiding (init)
 import Relude.Extra (fmapToSnd)
 import Text.Megaparsec
@@ -61,10 +63,11 @@ evaluate1 (Input (n :| nums) bs) = calculateScore <$> (extractWinningCombination
       i <- num
       winning <- find wins' states
       pure (i, winning)
-    calculateScore :: (Int, BoardState) -> Int
-    calculateScore (i, BoardState states) = i * sum (fst <$> filter ((== False) . snd) (join states))
 
-newtype BoardState = BoardState [[(Int, Bool)]] deriving newtype (Show)
+calculateScore :: (Int, BoardState) -> Int
+calculateScore (i, BoardState states) = i * sum (fst <$> filter ((== False) . snd) (join states))
+
+newtype BoardState = BoardState [[(Int, Bool)]] deriving newtype (Eq, Show)
 
 instance Semigroup BoardState where
   (BoardState bs) <> (BoardState bs') = BoardState $ zipWith (zipWith (\(_, b) (i', b') -> (i', b || b'))) bs bs'
@@ -89,8 +92,27 @@ wins' (BoardState bs) = lineWins bs || lineWins (transpose bs)
 init :: [Board] -> Int -> Step
 init bs i = Step (Last (Just i)) (BoardState . fmap (fmapToSnd (== i)) <$> bs)
 
-evaluate2 :: _
-evaluate2 inputs = undefined
+initBoard :: Functor f => f [[Int]] -> f BoardState
+initBoard bs = BoardState . fmap (fmapToSnd (const False)) <$> bs
+
+evaluate2 :: Input -> Maybe Int
+evaluate2 (Input nums bs) = findWinningStep
+  where
+    findWinningStep =
+      calculateScore
+        <$> ( (\(i, ls) -> (i,) <$> listToMaybe ls)
+                =<< llast
+                  ( filter (not . null . snd) $
+                      fmap fst <$> scanl' f (- 1, ([], initBoard bs)) (toList nums)
+                  )
+            )
+    llast :: [a] -> Maybe a
+    llast = getLast . foldMap (Last . Just)
+    f :: (Int, ([BoardState], [BoardState])) -> Int -> (Int, ([BoardState], [BoardState]))
+    f (_, (_, notWon)) i = (i, partition wins' (updateBoardState i <$> notWon))
+
+updateBoardState :: Int -> BoardState -> BoardState
+updateBoardState i (BoardState st) = BoardState $ fmap (\(j, b) -> (j, b || j == i)) <$> st
 
 run :: IO ()
 run = do
@@ -109,9 +131,11 @@ run = do
       putStrLn $ "Solution for input is: " <> show solution2
       putStrLn $ "Solution is correct for input: " <> show (solution2 == Just 44736)
 
--- putStrLn "=== Part 2"
--- let solution3 = evaluate2 exampleParsed
--- putStrLn $ "Solution is correct for example input: " <> show (solution3 == 1924)
--- let solution4 = evaluate2 input
--- putStrLn $ "Solution for input is: " <> show solution4
--- putStrLn $ "Solution is correct for input: " <> show (solution4 == 3379326)
+      putStrLn "=== Part 2"
+      let solution3 = evaluate2 exampleParsed
+      putStrLn $ "Solution for example is: " <> show solution3
+
+      putStrLn $ "Solution is correct for example input: " <> show (solution3 == Just 1924)
+      let solution4 = evaluate2 input
+      putStrLn $ "Solution for input is: " <> show solution4
+      putStrLn $ "Solution is correct for input: " <> show (solution4 == Just 1827)
