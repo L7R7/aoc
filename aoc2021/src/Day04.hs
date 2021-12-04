@@ -105,9 +105,10 @@ evaluateX :: ([(Int, [BoardState])] -> Maybe (Int, [BoardState])) -> Input -> Ma
 evaluateX choose (Input nums bs) = calculateScore <$> findWinningStep
   where
     findWinningStep :: Maybe (Int, BoardState)
-    findWinningStep =
-      choose (filter (not . null . snd) $ fmap fst <$> scanl' f (- 1, ([], initBoard bs)) (toList nums))
-        >>= (\(i, ls) -> (i,) <$> listToMaybe ls)
+    findWinningStep = choose (filter hasWins findSolutions) >>= findFirst
+    findSolutions = fmap fst <$> scanl' f (- 1, ([], initBoard bs)) (toList nums)
+    hasWins = not . null . snd
+    findFirst = \(i, ls) -> (i,) <$> listToMaybe ls
     f :: (Int, ([BoardState], [BoardState])) -> Int -> (Int, ([BoardState], [BoardState]))
     f (_, (_, notWon)) i = (i, partition wins' (updateBoardState i <$> notWon))
 
