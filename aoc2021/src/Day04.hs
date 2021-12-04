@@ -64,6 +64,9 @@ evaluate1 (Input (n :| nums) bs) = calculateScore <$> (extractWinningCombination
       winning <- find wins' states
       pure (i, winning)
 
+evaluate1' :: Input -> Maybe Int
+evaluate1' = evaluateX listToMaybe
+
 calculateScore :: (Int, BoardState) -> Int
 calculateScore (i, BoardState states) = i * sum (fst <$> filter ((== False) . snd) (join states))
 
@@ -96,18 +99,15 @@ initBoard :: Functor f => f [[Int]] -> f BoardState
 initBoard bs = BoardState . fmap (fmapToSnd (const False)) <$> bs
 
 evaluate2 :: Input -> Maybe Int
-evaluate2 (Input nums bs) = findWinningStep
+evaluate2 = evaluateX $ getLast . foldMap (Last . Just)
+
+evaluateX :: ([(Int, [BoardState])] -> Maybe (Int, [BoardState])) -> Input -> Maybe Int
+evaluateX choose (Input nums bs) = calculateScore <$> findWinningStep
   where
+    findWinningStep :: Maybe (Int, BoardState)
     findWinningStep =
-      calculateScore
-        <$> ( (\(i, ls) -> (i,) <$> listToMaybe ls)
-                =<< llast
-                  ( filter (not . null . snd) $
-                      fmap fst <$> scanl' f (- 1, ([], initBoard bs)) (toList nums)
-                  )
-            )
-    llast :: [a] -> Maybe a
-    llast = getLast . foldMap (Last . Just)
+      choose (filter (not . null . snd) $ fmap fst <$> scanl' f (- 1, ([], initBoard bs)) (toList nums))
+        >>= (\(i, ls) -> (i,) <$> listToMaybe ls)
     f :: (Int, ([BoardState], [BoardState])) -> Int -> (Int, ([BoardState], [BoardState]))
     f (_, (_, notWon)) i = (i, partition wins' (updateBoardState i <$> notWon))
 
@@ -130,12 +130,15 @@ run = do
       let solution2 = evaluate1 input
       putStrLn $ "Solution for input is: " <> show solution2
       putStrLn $ "Solution is correct for input: " <> show (solution2 == Just 44736)
+      let solution3 = evaluate1' input
+      putStrLn $ "Solution with second attempt for input is: " <> show solution3
+      putStrLn $ "Solution with second attempt is correct for input: " <> show (solution3 == Just 44736)
 
       putStrLn "=== Part 2"
-      let solution3 = evaluate2 exampleParsed
-      putStrLn $ "Solution for example is: " <> show solution3
+      let solution4 = evaluate2 exampleParsed
+      putStrLn $ "Solution for example is: " <> show solution4
 
-      putStrLn $ "Solution is correct for example input: " <> show (solution3 == Just 1924)
-      let solution4 = evaluate2 input
-      putStrLn $ "Solution for input is: " <> show solution4
-      putStrLn $ "Solution is correct for input: " <> show (solution4 == Just 1827)
+      putStrLn $ "Solution is correct for example input: " <> show (solution4 == Just 1924)
+      let solution5 = evaluate2 input
+      putStrLn $ "Solution for input is: " <> show solution5
+      putStrLn $ "Solution is correct for input: " <> show (solution5 == Just 1827)
