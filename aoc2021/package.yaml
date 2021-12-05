@@ -25,7 +25,7 @@ dependencies:
 library:
   source-dirs: src
   dependencies:
-    - matrix
+    - containers
     - megaparsec
     - parser-combinators
     - relude

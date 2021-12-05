@@ -1,18 +1,11 @@
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TupleSections #-}
 
 module Day05 where
 
-import qualified Control.Monad.Combinators.NonEmpty as NE
-import Data.List (partition)
-import Data.Matrix
-import qualified Data.Matrix as M
-import Data.Semigroup (Max (Max))
+import Data.Map (fromListWith)
+import qualified Data.Map
 import Relude hiding (init)
-import Relude.Extra (fmapToSnd, un)
 import Text.Megaparsec
-import qualified Text.Megaparsec as T
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer (decimal)
 
@@ -53,7 +46,7 @@ data Point = Point
   { xVal :: Int,
     yVal :: Int
   }
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
 
 data Input = Input
   { from :: Point,
@@ -67,12 +60,9 @@ vertical (Input (Point x _) (Point x' _)) = x == x'
 horizontal :: Input -> Bool
 horizontal (Input (Point _ y) (Point _ y')) = y == y'
 
-evaluate1 :: [Input] -> Int
-evaluate1 inputs = length $ filter (\(Sum i) -> i > 1) $ M.toList $ foldMap (\(Point x y) -> setElem (Sum 1) (x + 1, y + 1) zeroes) (filter ((||) <$> horizontal <*> vertical) inputs >>= line)
+evaluate1 :: [Input] -> _
+evaluate1 inputs = length $ Data.Map.filter (\(Sum i) -> i > 1) $ fromListWith (<>) $ (,Sum (1 :: Int)) <$> (filter ((||) <$> horizontal <*> vertical) inputs >>= line)
   where
-    (Max maxX, Max maxY) = foldMap (\(Input (Point x y) (Point x' y')) -> (Max x <> Max x', Max y <> Max y')) inputs
-    zeroes :: Matrix (Sum Int)
-    zeroes = matrix (maxX + 1) (maxY + 1) (\_ -> Sum 0)
     line :: Input -> [Point]
     line (Input (Point x y) (Point x' y'))
       | x == x' = Point x <$> [(min y y') .. (max y y')]
@@ -94,10 +84,9 @@ run = do
       let solution1 = evaluate1 exampleParsed
       putStrLn $ "Solution for example is: " <> show solution1
       putStrLn $ "Solution is correct for example input: " <> show (solution1 == 5)
-
       let solution2 = evaluate1 input
       putStrLn $ "Solution for input is: " <> show solution2
-      -- putStrLn $ "Solution is correct for input: " <> show (solution2 == Just 44736)
+      putStrLn $ "Solution is correct for input: " <> show (solution2 == 5280)
 
 -- putStrLn "=== Part 2"
 -- let solution4 = evaluate2 exampleParsed
