@@ -60,23 +60,20 @@ vertical (Input (Point x _) (Point x' _)) = x == x'
 horizontal :: Input -> Bool
 horizontal (Input (Point _ y) (Point _ y')) = y == y'
 
+line :: Input -> [Point]
+line (Input (Point x y) (Point x' y'))
+  | x == x' = Point x <$> [(min y y') .. (max y y')]
+  | y == y' = (`Point` y) <$> [(min x x') .. (max x x')]
+  | otherwise = zipWith Point (if x > x' then reverse [x' .. x] else [x .. x']) (if y > y' then reverse [y' .. y] else [y .. y'])
+
+accumulateAndCount :: Ord k => [k] -> Int
+accumulateAndCount = length . Data.Map.filter (\(Sum i) -> i > 1) . fromListWith (<>) . fmap (,Sum (1 :: Int))
+
 evaluate1 :: [Input] -> Int
-evaluate1 inputs = length $ Data.Map.filter (\(Sum i) -> i > 1) $ fromListWith (<>) $ (,Sum (1 :: Int)) <$> (filter ((||) <$> horizontal <*> vertical) inputs >>= line)
-  where
-    line :: Input -> [Point]
-    line (Input (Point x y) (Point x' y'))
-      | x == x' = Point x <$> [(min y y') .. (max y y')]
-      | y == y' = (`Point` y) <$> [(min x x') .. (max x x')]
-      | otherwise = []
+evaluate1 inputs = accumulateAndCount (filter ((||) <$> horizontal <*> vertical) inputs >>= line)
 
 evaluate2 :: [Input] -> Int
-evaluate2 inputs = length $ Data.Map.filter (\(Sum i) -> i > 1) $ fromListWith (<>) $ (,Sum (1 :: Int)) <$> (inputs >>= line)
-  where
-    line :: Input -> [Point]
-    line (Input (Point x y) (Point x' y'))
-      | x == x' = Point x <$> [(min y y') .. (max y y')]
-      | y == y' = (`Point` y) <$> [(min x x') .. (max x x')]
-      | otherwise = zipWith Point (if x > x' then reverse [x' .. x] else [x .. x']) (if y > y' then reverse [y' .. y] else [y .. y'])
+evaluate2 inputs = accumulateAndCount (inputs >>= line)
 
 run :: IO ()
 run = do
