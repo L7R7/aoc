@@ -60,7 +60,7 @@ vertical (Input (Point x _) (Point x' _)) = x == x'
 horizontal :: Input -> Bool
 horizontal (Input (Point _ y) (Point _ y')) = y == y'
 
-evaluate1 :: [Input] -> _
+evaluate1 :: [Input] -> Int
 evaluate1 inputs = length $ Data.Map.filter (\(Sum i) -> i > 1) $ fromListWith (<>) $ (,Sum (1 :: Int)) <$> (filter ((||) <$> horizontal <*> vertical) inputs >>= line)
   where
     line :: Input -> [Point]
@@ -69,8 +69,14 @@ evaluate1 inputs = length $ Data.Map.filter (\(Sum i) -> i > 1) $ fromListWith (
       | y == y' = (`Point` y) <$> [(min x x') .. (max x x')]
       | otherwise = []
 
-evaluate2 :: [Input] -> _
-evaluate2 = undefined
+evaluate2 :: [Input] -> Int
+evaluate2 inputs = length $ Data.Map.filter (\(Sum i) -> i > 1) $ fromListWith (<>) $ (,Sum (1 :: Int)) <$> (inputs >>= line)
+  where
+    line :: Input -> [Point]
+    line (Input (Point x y) (Point x' y'))
+      | x == x' = Point x <$> [(min y y') .. (max y y')]
+      | y == y' = (`Point` y) <$> [(min x x') .. (max x x')]
+      | otherwise = zipWith Point (if x > x' then reverse [x' .. x] else [x .. x']) (if y > y' then reverse [y' .. y] else [y .. y'])
 
 run :: IO ()
 run = do
@@ -88,11 +94,10 @@ run = do
       putStrLn $ "Solution for input is: " <> show solution2
       putStrLn $ "Solution is correct for input: " <> show (solution2 == 5280)
 
--- putStrLn "=== Part 2"
--- let solution4 = evaluate2 exampleParsed
--- putStrLn $ "Solution for example is: " <> show solution4
-
--- putStrLn $ "Solution is correct for example input: " <> show (solution4 == Just 1924)
--- let solution5 = evaluate2 input
--- putStrLn $ "Solution for input is: " <> show solution5
--- putStrLn $ "Solution is correct for input: " <> show (solution5 == Just 1827)
+      putStrLn "=== Part 2"
+      let solution4 = evaluate2 exampleParsed
+      putStrLn $ "Solution for example is: " <> show solution4
+      putStrLn $ "Solution is correct for example input: " <> show (solution4 == 12)
+      let solution5 = evaluate2 input
+      putStrLn $ "Solution for input is: " <> show solution5
+      putStrLn $ "Solution is correct for input: " <> show (solution5 == 16716)
