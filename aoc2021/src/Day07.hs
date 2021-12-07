@@ -16,7 +16,16 @@ parseInput :: Parsec Void Text [Int]
 parseInput = decimal `sepBy` char ','
 
 evaluate1 :: [Int] -> Int
-evaluate1 inputs = minimum $ sum . (\c -> (\i -> abs (c - i)) <$> inputs) <$> candidates
+evaluate1 = evaluate id
+
+evaluate2 :: [Int] -> Int
+evaluate2 = evaluate f
+  where
+    f x | x <= 0 = 0
+    f i = i + f (i - 1)
+
+evaluate :: (Ord a, Functor f, Num a, Num b, Foldable f, Ord b, Enum b) => (b -> a) -> f b -> a
+evaluate f inputs = minimum $ sum . (\c -> (\i -> f (abs (c - i))) <$> inputs) <$> candidates
   where
     mn = minimum inputs
     mx = maximum inputs
@@ -37,3 +46,11 @@ run = do
       let solution2 = evaluate1 input
       putStrLn $ "Solution for input is: " <> show solution2
       putStrLn $ "Solution is correct for input: " <> show (solution2 == 335271)
+
+      putStrLn "=== Part 2"
+      let solution4 = evaluate2 exampleParsed
+      putStrLn $ "Solution for example is: " <> show solution4
+      putStrLn $ "Solution is correct for example input: " <> show (solution4 == 168)
+      let solution5 = evaluate2 input
+      putStrLn $ "Solution for input is: " <> show solution5
+      putStrLn $ "Solution is correct for input: " <> show (solution5 == 95851339)
