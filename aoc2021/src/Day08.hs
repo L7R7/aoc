@@ -1,6 +1,10 @@
-module Day08 where
+module Day08 (run) where
 
+import qualified Data.Map as M
+import qualified Data.Set as S
 import Relude hiding (init)
+import Relude.Extra (universe)
+import qualified Relude.Unsafe as Unsafe
 import Text.Megaparsec
 import Text.Megaparsec.Char
 
@@ -33,20 +37,9 @@ exampleParsed =
   ]
 
 parseInput :: Parsec Void Text Input
-parseInput = do
-  signal <- count 10 signalParser
-  _ <- string "| "
-  output <- count 4 signalParser
-  pure $ Input signal output
-
-signalParser :: ParsecT Void Text Identity String
-signalParser = do
-  x <- Text.Megaparsec.some $ choice [char 'a', char 'b', char 'c', char 'd', char 'e', char 'f', char 'g']
-  _ <- optional $ string " "
-  pure x
-
-signalPatternsParser :: ParsecT Void Text Identity [String]
-signalPatternsParser = Text.Megaparsec.some signalParser 
+parseInput = Input <$> count 10 signalParser <* string "| " <*> count 4 signalParser
+  where
+    signalParser = Text.Megaparsec.some (choice [char 'a', char 'b', char 'c', char 'd', char 'e', char 'f', char 'g']) <* optional (char ' ')
 
 data Input = Input
   { signalPatterns :: [String],
@@ -55,13 +48,60 @@ data Input = Input
   deriving (Eq, Show)
 
 evaluate1 :: [Input] -> Int
-evaluate1 inputs = sum $ f <$> inputs
-  where
-    f :: Input -> Int
-    f (Input _ strs) = length $filter (\s -> length s == 2 || length s == 4 || length s == 3 || length s == 7) strs
+evaluate1 inputs = sum $ length . filter (\s -> let l = length s in l == 2 || l == 4 || l == 3 || l == 7) . outputValue <$> inputs
 
 evaluate2 :: [Input] -> Int
-evaluate2 inputs = 0
+evaluate2 inputs = sum $ solve <$> inputs
+
+--  aaaa
+-- b    c
+-- b    c
+--  ....
+-- e    f
+-- e    f
+--  gggg
+data Digit = A | B | C | D | E | F | G deriving (Bounded, Enum, Eq, Ord, Show)
+
+allChars :: [Char]
+allChars = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+
+allPerms :: [Map Char Digit]
+allPerms = M.fromList . flip zip universe <$> permutations allChars
+
+sumUp :: [Int] -> Int
+sumUp = go 0
+  where
+    go acc [] = acc
+    go acc (i : is) = go (acc * 10 + i) is
+
+numbers :: Map (S.Set Digit) Int
+numbers =
+  M.fromList
+    [ (S.fromList [A, B, C, E, F, G], 0),
+      (S.fromList [C, F], 1),
+      (S.fromList [A, C, D, E, G], 2),
+      (S.fromList [A, C, D, F, G], 3),
+      (S.fromList [B, C, D, F], 4),
+      (S.fromList [A, B, D, F, G], 5),
+      (S.fromList [A, B, D, E, F, G], 6),
+      (S.fromList [A, C, F], 7),
+      (S.fromList [A, B, C, D, E, F, G], 8),
+      (S.fromList [A, B, C, D, F, G], 9)
+    ]
+
+solve :: Input -> Int
+solve (Input signals outputs) = sumUp $ translate translationMap <$> outputs
+  where
+    translationMap :: Map Char Digit
+    translationMap = Unsafe.head $ filter possible allPerms
+    possible :: Map Char Digit -> Bool
+    possible mcd = all isJust $ resolve mcd <$> signals
+    translate :: Map Char Digit -> String -> Int
+    translate mcd s = numbers M.! S.fromList ((mcd M.!) <$> s)
+    resolve :: Map Char Digit -> String -> Maybe Int
+    resolve mcd s = M.lookup digits numbers
+      where
+        digits = S.fromList $ (mcd M.!) <$> s
 
 run :: IO ()
 run = do
@@ -79,10 +119,10 @@ run = do
       putStrLn $ "Solution for input is: " <> show solution2
       putStrLn $ "Solution is correct for input: " <> show (solution2 == 390)
 
--- putStrLn "=== Part 2"
--- let solution4 = evaluate2 exampleParsed
--- putStrLn $ "Solution for example is: " <> show solution4
--- putStrLn $ "Solution is correct for example input: " <> show (solution4 == 12)
--- let solution5 = evaluate2 input
--- putStrLn $ "Solution for input is: " <> show solution5
--- putStrLn $ "Solution is correct for input: " <> show (solution5 == 16716)
+      putStrLn "=== Part 2"
+      let solution4 = evaluate2 exampleParsed
+      putStrLn $ "Solution for example is: " <> show solution4
+      putStrLn $ "Solution is correct for example input: " <> show (solution4 == 61229)
+      let solution5 = evaluate2 input
+      putStrLn $ "Solution for input is: " <> show solution5
+      putStrLn $ "Solution is correct for input: " <> show (solution5 == 1011785)
