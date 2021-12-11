@@ -3215,10 +3215,10 @@
     lhs: "\\a -> (a, a)"
     note: "Use `dup` from `Relude.Extra.Tuple`"
     rhs: dup
-- hint:
-    lhs: "\\a -> (f a, a)"
-    note: "Use `toFst` from `Relude.Extra.Tuple`"
-    rhs: toFst f
+# - hint:
+#     lhs: "\\a -> (f a, a)"
+#     note: "Use `toFst` from `Relude.Extra.Tuple`"
+#     rhs: toFst f
 - hint:
     lhs: "\\a -> (a, f a)"
     note: "Use `toSnd` from `Relude.Extra.Tuple`"

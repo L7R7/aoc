@@ -1,6 +1,10 @@
+{-# LANGUAGE TupleSections #-}
+
 module Day09 where
 
 import Data.Char (digitToInt)
+import Data.Foldable (minimumBy)
+import qualified Data.Map as M
 import Math.Geometry.Grid
 import Math.Geometry.Grid.Square
 import Math.Geometry.GridMap (lookup, (!))
@@ -34,13 +38,28 @@ createGrid ts = lazyGridMap (rectSquareGrid rows columns) (join ts)
     rows = length $ Unsafe.head ts
 
 evaluate1 :: GameGrid -> Int
-evaluate1 grid = sum $ (+ 1) . fst <$> filter (\(i, is) -> all (i <) is) (getNeighbours grid <$> indices grid)
+evaluate1 grid = sum $ (+ 1) . fst <$> filter (\(i, is) -> all (i <) is) (getNeighbours <$> indices grid)
+  where
+    getNeighbours :: (Int, Int) -> (Int, [Int])
+    getNeighbours i = (grid ! i, catMaybes $ (`lookup` grid) <$> neighbours grid i)
 
-getNeighbours :: GameGrid -> (Int, Int) -> (Int, [Int])
-getNeighbours g i = (g ! i, catMaybes $ (`lookup` g) <$> neighbours g i)
+evaluate2 :: GameGrid -> Int
+evaluate2 grid = findAndMultiplyTopThree $ groupSamePoints $ findBasinLowPoint <$> indices grid
+  where
+    groupSamePoints :: Ord k => [k] -> Map k (Sum Int)
+    groupSamePoints = M.fromListWith (<>) . fmap (,Sum (1 :: Int))
 
-evaluate2 :: GameGrid -> _
-evaluate2 grid = 0
+    findAndMultiplyTopThree :: (Num a, Ord a) => Map (Int, Int) (Sum a) -> a
+    findAndMultiplyTopThree = getProduct . foldMap (Product . getSum) . take 3 . reverse . sort . M.elems
+
+    findBasinLowPoint :: (Int, Int) -> (Int, Int)
+    findBasinLowPoint index
+      | val == 9 = index
+      | val < fst adjacentMin = index
+      | otherwise = findBasinLowPoint (snd adjacentMin)
+      where
+        val = grid ! index
+        adjacentMin = minimumBy (\(i, _) (i', _) -> compare i i') $ (\ix -> (grid ! ix, ix)) <$> neighbours grid index
 
 run :: IO ()
 run = do
@@ -57,10 +76,10 @@ run = do
       putStrLn $ "Solution for input is: " <> show solution2
       putStrLn $ "Solution is correct for input: " <> show (solution2 == 518)
 
--- putStrLn "=== Part 2"
--- let solution4 = evaluate2 exampleParsed
--- putStrLn $ "Solution for example is: " <> show solution4
--- putStrLn $ "Solution is correct for example input: " <> show (solution4 == 61229)
--- let solution5 = evaluate2 input
--- putStrLn $ "Solution for input is: " <> show solution5
--- putStrLn $ "Solution is correct for input: " <> show (solution5 == 1011785)
+      putStrLn "=== Part 2"
+      let solution4 = evaluate2 $ createGrid exampleParsed
+      putStrLn $ "Solution for example is: " <> show solution4
+      putStrLn $ "Solution is correct for example input: " <> show (solution4 == 1134)
+      let solution5 = evaluate2 input
+      putStrLn $ "Solution for input is: " <> show solution5
+      putStrLn $ "Solution is correct for input: " <> show (solution5 == 949905)
