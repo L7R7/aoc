@@ -1,5 +1,3 @@
-{-# LANGUAGE TupleSections #-}
-
 module Day10 where
 
 import Relude hiding (init)
@@ -63,11 +61,7 @@ points '>' = 25137
 points _ = 0
 
 matches :: Char -> Char -> Bool
-matches '{' '}' = True
-matches '(' ')' = True
-matches '[' ']' = True
-matches '<' '>' = True
-matches _ _ = False
+matches c c' = findClosing c == c'
 
 isOpening :: Char -> Bool
 isOpening '{' = True
