@@ -2,10 +2,7 @@
 
 module Day10 where
 
-import qualified Data.Map as M
-import qualified Data.Set as S
 import Relude hiding (init)
-import Relude.Extra (universe)
 import qualified Relude.Unsafe as Unsafe
 import Text.Megaparsec
 import Text.Megaparsec.Char
@@ -42,16 +39,21 @@ exampleParsed =
 parseInput :: Parsec Void Text [String]
 parseInput = Text.Megaparsec.some (choice [char '{', char '}', char '(', char ')', char '[', char ']', char '<', char '>']) `sepEndBy1` newline
 
-evaluate1 :: [String] -> Int
-evaluate1 = sum . mapMaybe (fmap points . snd . foldl' f ([], Nothing))
+preprocess :: [String] -> [(String, Maybe Char)]
+preprocess = fmap (foldl' f ([], Nothing))
   where
-    f :: ([Char], Maybe Char) -> Char -> ([Char], Maybe Char)
+    f :: (String, Maybe Char) -> Char -> (String, Maybe Char)
     f x@(stack, err) c
       | isJust err = x
-      | isOpening c = (push stack c, Nothing)
+      | isOpening c = (c : stack, Nothing)
       | otherwise = if all (`matches` c) c' then (stack', Nothing) else (stack, Just c)
       where
         (c', stack') = pop stack
+        pop (a : as) = (Just a, as)
+        pop _ = (Nothing, [])
+
+evaluate1 :: [String] -> Int
+evaluate1 = sum . fmap points . mapMaybe snd . preprocess
 
 points :: Char -> Int
 points ')' = 3
@@ -59,15 +61,6 @@ points ']' = 57
 points '}' = 1197
 points '>' = 25137
 points _ = 0
-
-type Stack a = [a]
-
-push :: Stack a -> a -> Stack a
-push as a = a : as
-
-pop :: Stack a -> (Maybe a, Stack a)
-pop (a : as) = (Just a, as)
-pop _ = (Nothing, [])
 
 matches :: Char -> Char -> Bool
 matches '{' '}' = True
@@ -84,15 +77,7 @@ isOpening '<' = True
 isOpening _ = False
 
 evaluate2 :: [String] -> Int
-evaluate2 = findMiddle . fmap points2 . fmap (fmap findClosing) . fmap fst . filter (isNothing . snd) . fmap (foldl' f ([], Nothing))
-  where
-    f :: ([Char], Maybe Char) -> Char -> ([Char], Maybe Char)
-    f x@(stack, err) c
-      | isJust err = x
-      | isOpening c = (push stack c, Nothing)
-      | otherwise = if all (`matches` c) c' then (stack', Nothing) else (stack, Just c)
-      where
-        (c', stack') = pop stack
+evaluate2 = findMiddle . fmap (points2 . fmap findClosing . fst) . filter (isNothing . snd) . preprocess
 
 findClosing :: Char -> Char
 findClosing '{' = '}'
@@ -138,4 +123,4 @@ run = do
       putStrLn $ "Solution is correct for example input: " <> show (solution4 == 288957)
       let solution5 = evaluate2 input
       putStrLn $ "Solution for input is: " <> show solution5
-      putStrLn $ "Solution is correct for input: " <> show (solution5 == 1011785)
+      putStrLn $ "Solution is correct for input: " <> show (solution5 == 2289754624)
