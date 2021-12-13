@@ -91,9 +91,7 @@ points2 = foldl' (\acc i -> acc * 5 + i) 0 . fmap p
     p _ = 0
 
 findMiddle :: [Int] -> Int
-findMiddle is = sort is Unsafe.!! x
-  where
-    x = (length is - 1) `div` 2
+findMiddle is = sort is Unsafe.!! (length is - 1) `div` 2
 
 run :: IO ()
 run = do
