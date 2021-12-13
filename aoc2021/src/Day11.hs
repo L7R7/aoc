@@ -1,6 +1,6 @@
 {-# LANGUAGE TupleSections #-}
 
-module Day11 where
+module Day11 (run) where
 
 import Data.Char (digitToInt)
 import Math.Geometry.Grid
@@ -12,9 +12,6 @@ import Relude hiding (init)
 import qualified Relude.Unsafe as Unsafe
 import Text.Megaparsec
 import Text.Megaparsec.Char
-
-example :: Text
-example = unlines ["2199943210", "3987894921", "9856789892", "8767896789", "9899965678"]
 
 exampleParsed :: [[Int]]
 exampleParsed =
@@ -41,25 +38,33 @@ createGrid ts = lazyGridMap (rectOctGrid rows columns) ((mempty,) <$> join ts)
     columns = length ts
     rows = length $ Unsafe.head ts
 
-evaluate1 :: GameGrid -> _
-evaluate1 grid = getSum $ foldMap fst $ G.elems $ foldl' (\lgm _ -> step lgm) grid [1 .. 100 :: Int]
+evaluate1 :: GameGrid -> Int
+evaluate1 grid = getSum $ foldMap fst $ G.elems evaluate100
+  where
+    evaluate100 = foldl' (\lgm _ -> step lgm) grid (replicate 100 (0 :: Int))
 
 step :: GameGrid -> GameGrid
-step = flash . increase
-
-increase :: GameGrid -> GameGrid
-increase = G.map (fmap (+ 1))
+step = flash . G.map (fmap (+ 1))
 
 flash :: GameGrid -> GameGrid
 flash g = G.map (fmap (\i -> if (i < 0) || (i > 9) then 0 else i)) $ flash' g
 
 flash' :: GameGrid -> GameGrid
-flash' g = reflash $ foldl' (\lgm x0 -> if snd (lgm ! x0) > 9 then adjust (\(si, _) -> (Sum 1 <> si, -1)) x0 (foldl' (\g ix -> adjust (fmap (\i -> if i >= 0 then i + 1 else i)) ix g) lgm (neighbours lgm x0)) else lgm) g (indices g)
+flash' g = reflash $ foldl' (\lgm ix -> if snd (lgm ! ix) > 9 then flashIndex ix lgm else lgm) g (indices g)
   where
+    reflash :: GameGrid -> GameGrid
     reflash grd = if any (\(_, i) -> i > 9) grd then flash' grd else grd
+    flashIndex :: (Int, Int) -> GameGrid -> GameGrid
+    flashIndex ix lgm = adjust (\(si, _) -> (Sum 1 <> si, -1)) ix (increaseNeighbours ix lgm)
+    increaseNeighbours :: (Int, Int) -> GameGrid -> GameGrid
+    increaseNeighbours ix lgm = flipfoldl' (adjust (fmap (\i -> if i >= 0 then i + 1 else i))) lgm (neighbours lgm ix)
 
-evaluate2 :: GameGrid -> _
-evaluate2 grid = Unsafe.head $ fst <$>( take 1 $ dropWhile (\ (i, g) -> not (all (\(_, i) -> i == 0) g)) $ scanl' (\(_, lgm) i -> (i, step lgm)) (0, grid) [1 :: Int ..])
+evaluate2 :: GameGrid -> Int
+evaluate2 grid = Unsafe.head $ fst <$> dropWhile notAllFlashed evaluateWithIndex
+  where
+    evaluateWithIndex :: [(Int, LGridMap RectOctGrid Int)]
+    evaluateWithIndex = fmap (G.map snd) <$> scanl' (\(_, lgm) i -> (i, step lgm)) (0, grid) [1 ..]
+    notAllFlashed (_, g) = not (all (== 0) g)
 
 run :: IO ()
 run = do
@@ -82,4 +87,4 @@ run = do
       putStrLn $ "Solution is correct for example input: " <> show (solution4 == 195)
       let solution5 = evaluate2 input
       putStrLn $ "Solution for input is: " <> show solution5
-      putStrLn $ "Solution is correct for input: " <> show (solution5 == 949905)
+      putStrLn $ "Solution is correct for input: " <> show (solution5 == 232)
