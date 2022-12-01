@@ -12,7 +12,7 @@ type Elve = [Int]
 type Input = NonEmpty Elve
 
 parseFile :: FilePath -> IO (Maybe Input)
-parseFile fp = fmap parse . nonEmpty . Prelude.lines <$> readFile fp
+parseFile fp = viaNonEmpty parse . Prelude.lines <$> readFile fp
 
 parse :: NonEmpty String -> Input
 parse inputs = foldl' f ([read frstLine] :| []) tailLines
@@ -28,7 +28,7 @@ solution1 :: Input -> Int
 solution1 = maximum . fmap sum
 
 solution2 :: Input -> Int
-solution2 = sum . NE.take 3 . NE.reverse . NE.sort . fmap sum
+solution2 = sum . NE.take 3 . NE.sortBy (comparing negate) . fmap sum
 
 run :: IO ()
 run = do
