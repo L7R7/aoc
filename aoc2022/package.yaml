@@ -43,7 +43,7 @@ library:
   source-dirs: src
   dependencies:
     - megaparsec
-    - parser-combinators
+    # - parser-combinators
     - relude
   default-extensions:
     - DerivingStrategies
