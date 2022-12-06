@@ -39,6 +39,8 @@ library:
     - parser-combinators
     - relude
   default-extensions:
+    - DerivingStrategies
+    - GeneralizedNewtypeDeriving
     - NoImplicitPrelude
     - OverloadedStrings
     - PartialTypeSignatures
