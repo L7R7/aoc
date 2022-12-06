@@ -22,15 +22,22 @@ dependencies:
   - base >= 4.7 && < 5
 
 ghc-options:
+  - -fhide-source-paths
+  - -fwrite-ide-info
+  - -hiedir=.hie
   - -Wall
   - -Wcompat
   - -Widentities
   - -Wincomplete-record-updates
   - -Wincomplete-uni-patterns
+  - -Wmissing-deriving-strategies
   - -Wmissing-export-lists
   - -Wmissing-home-modules
   - -Wpartial-fields
   - -Wredundant-constraints
+  - -Wunused-packages
+  # - -flate-specialise
+  # - -fspecialise-aggressively
 
 library:
   source-dirs: src
