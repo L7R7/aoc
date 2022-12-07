@@ -45,6 +45,7 @@ library:
     - megaparsec
     # - parser-combinators
     - relude
+    - vector
   default-extensions:
     - DerivingStrategies
     - GeneralizedNewtypeDeriving
