@@ -1,18 +1,16 @@
 module Day06 (run) where
 
-import Data.List (findIndex, zipWith5)
+import Data.List (findIndex)
 import Relude hiding (many)
 
-evaluate1 :: String -> Maybe Integer
-evaluate1 txt = join $ find isJust $ zipWith5 f [4 ..] txt (drop 1 txt) (drop 2 txt) (drop 3 txt)
-  where
-    f :: Integer -> Char -> Char -> Char -> Char -> Maybe Integer
-    f i a b c d
-      | ordNub [a, b, c, d] == [a, b, c, d] = Just i
-      | otherwise = Nothing
+evaluate1 :: String -> Maybe Int
+evaluate1 = evaluate 4
 
 evaluate2 :: String -> Maybe Int
-evaluate2 s = (+ 14) <$> findIndex id ((\cs -> ordNub cs == cs) <$> windows 14 s)
+evaluate2 = evaluate 14
+
+evaluate :: Int -> String -> Maybe Int
+evaluate i s = (+ i) <$> findIndex id ((\cs -> ordNub cs == cs) <$> windows i s)
   where
     windows n xs = transpose (take n (tails xs))
 
