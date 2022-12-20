@@ -1,80 +1,78 @@
 module Day07 (run) where
 
-import Data.Vector (Vector)
-import qualified Data.Vector as V
-import Relude hiding (many)
+import Data.Foldable (Foldable (minimum))
+import qualified Data.Map as M
+import Relude hiding (many, some)
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer (decimal)
+import qualified Prelude
+
+parseInput1 :: Parsec Void Text [Input]
+parseInput1 = many parseInput
 
 parseInput :: Parsec Void Text Input
-parseInput = Input <$> stacksParser <* (newline <* newline) <*> instructionsParser
-
-stacksParser :: Parsec Void Text Stacks
-stacksParser = do
-  res <- Stacks . buildStacks <$> stackLineParser `sepBy` newline
-  _ <- (char ' ' >> digitChar >> char ' ') `sepBy` char ' '
-  pure res
+parseInput =
+  CdRoot <$ string "$ cd /" <* splitter
+    <|> CdPop <$ string "$ cd .." <* splitter
+    <|> Cd <$> (string "$ cd " *> many alphaNumChar <* splitter)
+    <|> Ls <$> (string "$ ls" >> newline *> many (dirContentParser <* splitter))
   where
-    buildStacks = foldl' f V.empty
-    f :: Vector (Vector Char) -> [Maybe Char] -> Vector (Vector Char)
-    f acc mcs
-      | null acc = f (V.replicate (length mcs) V.empty) mcs
-      | null mcs = acc
-      | otherwise = V.zipWith (\stack m_c -> maybe stack (V.snoc stack) m_c) acc (V.fromList mcs)
+    splitter = optional newline
 
-    stackLineParser :: Parsec Void Text [Maybe Char]
-    stackLineParser = (foo <|> box) `sepBy` char ' '
-      where
-        foo = Nothing <$ string "   "
-        box = Just <$> (char '[' *> letterChar <* char ']')
+dirContentParser :: Parsec Void Text DirContent
+dirContentParser =
+  Directory <$> (string "dir " *> many alphaNumChar)
+    <|> curry File <$> decimal <* char ' ' <*> many (alphaNumChar <|> char '.')
 
-instructionsParser :: Parsec Void Text [Instruction]
-instructionsParser = instruction `sepBy` newline
+type FileName = String
+
+type FileSize = Integer
+
+type DirectoryName = String
+
+data DirContent = File (FileSize, FileName) | Directory DirectoryName deriving stock (Show)
+
+data Input = Cd DirectoryName | CdRoot | CdPop | Ls [DirContent] deriving stock (Show)
+
+evaluate1 :: [Input] -> Sum FileSize
+evaluate1 = foldMap snd . filter (\x0 -> snd x0 <= Sum 100000) . process
+
+evaluate2 :: FileSize -> [Input] -> Sum FileSize
+evaluate2 occupied = minimum . fmap snd . filter (\x0 -> snd x0 >= Sum toBeFreed) . process
   where
-    instruction = (\n f t -> Instruction n (f - 1) (t - 1)) <$> (string "move " *> decimal) <*> (string " from " *> decimal) <*> (string " to " *> decimal)
+    maxSpace = 70000000
+    requiredSpace = 30000000
+    toBeFreed = requiredSpace - (maxSpace - occupied)
 
-data Input = Input Stacks [Instruction] deriving stock (Show)
-
-newtype Stacks = Stacks (Vector (Vector Char)) deriving stock (Show)
-
-data Instruction = Instruction {numberOfCrates :: Int, from :: Int, to :: Int} deriving stock (Show)
-
-evaluate1 :: Input -> String
-evaluate1 (Input initial instructions) = V.toList $ extractHeads $ foldl' step initial instructions
+process :: [Input] -> [([String], Sum FileSize)]
+process inputs = sumUpFileSizes <$> fmap (\(d, cs) -> (d, ordNub $ join $ cs : mapMaybe (\(dir', cs') -> if d `isPrefixOf` dir' then Just cs' else Nothing) directories)) directories
   where
-    step :: Stacks -> Instruction -> Stacks
-    step (Stacks stacks) (Instruction 1 f t) = Stacks $ V.update stacks (V.fromList [(f, V.tail vectorToRemoveFrom), (t, V.cons elementToMove vectorToAddTo)])
-      where
-        vectorToRemoveFrom = stacks V.! f
-        elementToMove = V.head vectorToRemoveFrom
-        vectorToAddTo = stacks V.! t
-    step stacks (Instruction i f t) = step (step stacks (Instruction 1 f t)) (Instruction (i - 1) f t)
-    extractHeads :: Stacks -> Vector Char
-    extractHeads (Stacks vec) = V.head <$> vec
+    sumUpFileSizes = fmap (foldMap (Sum . snd))
+    directories = M.toAscList $ M.mapKeys reverse contents
+    (_, contents) = foldl' f ([], M.empty) inputs
 
-evaluate2 :: Input -> String
-evaluate2 (Input initial instructions) = V.toList $ extractHeads $ foldl' step initial instructions
-  where
-    step :: Stacks -> Instruction -> Stacks
-    step (Stacks stacks) (Instruction i f t) = Stacks $ V.update stacks (V.fromList [(f, V.drop i vectorToRemoveFrom), (t, elementsToMove V.++ vectorToAddTo)])
-      where
-        vectorToRemoveFrom = stacks V.! f
-        elementsToMove = V.take i vectorToRemoveFrom
-        vectorToAddTo = stacks V.! t
-    extractHeads :: Stacks -> Vector Char
-    extractHeads (Stacks vec) = V.head <$> vec
+    f :: ([String], Map [String] [(FileName, FileSize)]) -> Input -> ([String], Map [String] [(FileName, FileSize)])
+    f acc (Cd s) = first (s :) acc
+    f acc CdRoot = first (const []) acc
+    f acc CdPop = first Prelude.tail acc
+    f (cursor, files) (Ls dcs) = (cursor, M.insert cursor (mapMaybe g dcs) files)
+
+    g :: DirContent -> Maybe (FileName, FileSize)
+    g (File x0) = Just $ swap x0
+    g (Directory _) = Nothing
 
 run :: IO ()
 run = do
-  exampleInputRaw <- readFileText "inputs/05-example.txt"
-  let exampleParsed = parseMaybe parseInput exampleInputRaw
-  print $ evaluate1 <$> exampleParsed
+  exampleInputRaw <- readFileText "inputs/07-example.txt"
+  let exampleParsed = parseMaybe parseInput1 exampleInputRaw
+  print $ traverse evaluate1 exampleParsed
 
-  inputRaw <- readFileText "inputs/05.txt"
-  let parsed = parseMaybe parseInput inputRaw
-  print $ evaluate1 <$> parsed
+  inputRaw <- readFileText "inputs/07.txt"
+  let parsed = parseMaybe parseInput1 inputRaw
 
-  print $ evaluate2 <$> exampleParsed
+  print $ traverse evaluate1 parsed
 
-  print $ evaluate2 <$> parsed
+  print $ traverse (evaluate2 48381165) exampleParsed
+
+  print $ traverse (evaluate2 43441553) parsed

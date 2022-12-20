@@ -42,6 +42,7 @@ ghc-options:
 library:
   source-dirs: src
   dependencies:
+    - containers
     - megaparsec
     # - parser-combinators
     - relude
