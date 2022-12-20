@@ -43,6 +43,7 @@ library:
   source-dirs: src
   dependencies:
     - containers
+    # - grids
     - megaparsec
     # - parser-combinators
     - relude

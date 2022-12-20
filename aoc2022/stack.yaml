@@ -2,3 +2,8 @@ resolver: lts-19.33
 
 packages:
   - .
+
+extra-deps:
+  - grid-7.8.15@sha256:7fc4a51062c8915e3301774242fbb74bdafcb959e1da17015d5fb1658890eb63,2289
+  - github: l7r7/grids
+    commit: 1ed130ea560bfe00e77f6b5d079d099c25c890e5
