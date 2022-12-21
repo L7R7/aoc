@@ -44,6 +44,7 @@ library:
   dependencies:
     - containers
     # - grids
+    - grid
     - megaparsec
     # - parser-combinators
     - relude
